@@ -15,9 +15,6 @@ subprojects {
     version = "${project.property("version")}.${commitsSinceLastTag()}"
 
     java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(8))
-        }
         withSourcesJar()
     }
 

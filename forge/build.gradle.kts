@@ -12,12 +12,6 @@ dependencies {
     shade(project(":chunky-common"))
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(16))
-    }
-}
-
 tasks {
     processResources {
         filesMatching("META-INF/mods.toml") {
