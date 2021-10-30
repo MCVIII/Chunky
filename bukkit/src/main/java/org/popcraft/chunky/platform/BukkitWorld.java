@@ -1,8 +1,9 @@
 package org.popcraft.chunky.platform;
 
 import io.papermc.lib.PaperLib;
-import org.bukkit.Location;
-import org.popcraft.chunky.util.Coordinate;
+import org.bukkit.Effect;
+import org.bukkit.Sound;
+import org.popcraft.chunky.platform.util.Location;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -49,14 +50,39 @@ public class BukkitWorld implements World {
     }
 
     @Override
-    public Coordinate getSpawnCoordinate() {
-        Location spawnLocation = world.getSpawnLocation();
-        return new Coordinate(spawnLocation.getX(), spawnLocation.getZ());
+    public Location getSpawn() {
+        org.bukkit.Location spawnLocation = world.getSpawnLocation();
+        return new Location(this, spawnLocation.getX(), spawnLocation.getY(), spawnLocation.getZ(), spawnLocation.getYaw(), spawnLocation.getPitch());
     }
 
     @Override
     public Border getWorldBorder() {
         return worldBorder;
+    }
+
+    @Override
+    public int getElevation(int x, int z) {
+        return world.getHighestBlockYAt(x, z);
+    }
+
+    @Override
+    public void playEffect(Player player, String effect) {
+        try {
+            final Location location = player.getLocation();
+            final org.bukkit.Location bukkitLocation = new org.bukkit.Location(world, location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+            world.playEffect(bukkitLocation, Effect.valueOf(effect.toUpperCase()), 0);
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
+    @Override
+    public void playSound(Player player, String sound) {
+        try {
+            final Location location = player.getLocation();
+            final org.bukkit.Location bukkitLocation = new org.bukkit.Location(world, location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+            world.playSound(bukkitLocation, Sound.valueOf(sound.toUpperCase()), 2f, 1f);
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
     @Override

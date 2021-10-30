@@ -3,54 +3,50 @@ package org.popcraft.chunky.platform;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.popcraft.chunky.util.Coordinate;
+import org.popcraft.chunky.platform.util.Location;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
-
-import java.util.Optional;
-import java.util.UUID;
+import org.spongepowered.api.entity.living.player.User;
+import org.spongepowered.api.service.permission.Subject;
 
 import static org.popcraft.chunky.util.Translator.translateKey;
 
 public class SpongeSender implements Sender {
-    private final Audience audience;
+    private final Object source;
 
-    public SpongeSender(Audience audience) {
-        this.audience = audience;
+    public SpongeSender(Object source) {
+        this.source = source;
     }
 
     @Override
     public boolean isPlayer() {
-        return getPlayer().isPresent();
+        return source instanceof Player;
     }
 
     @Override
     public String getName() {
-        return getPlayer().map(Player::name).orElse("Console");
+        return source instanceof User ? ((User) source).name() : "Console";
     }
 
     @Override
-    public Optional<UUID> getUUID() {
-        return getPlayer().map(Player::uniqueId);
+    public World getWorld() {
+        return new SpongeWorld(Sponge.game().server().worldManager().defaultWorld());
     }
 
     @Override
-    public Coordinate getCoordinate() {
-        return getPlayer()
-                .map(Player::location)
-                .map(loc -> new Coordinate(loc.blockX(), loc.blockZ()))
-                .orElse(new Coordinate(0, 0));
+    public Location getLocation() {
+        return new Location(getWorld(), 0, 0, 0, 0, 0);
     }
 
-    private Optional<Player> getPlayer() {
-        if (audience instanceof Player) {
-            return Optional.of((Player) audience);
-        } else {
-            return Optional.empty();
-        }
+    @Override
+    public boolean hasPermission(String permission) {
+        return source instanceof Subject && ((Subject) source).hasPermission(permission);
     }
 
     @Override
     public void sendMessage(String key, boolean prefixed, Object... args) {
-        audience.sendMessage(Identity.nil(), LegacyComponentSerializer.legacyAmpersand().deserialize(translateKey(key, prefixed, args)));
+        if (source instanceof Audience) {
+            ((Audience) source).sendMessage(Identity.nil(), LegacyComponentSerializer.legacyAmpersand().deserialize(translateKey(key, prefixed, args)));
+        }
     }
 }

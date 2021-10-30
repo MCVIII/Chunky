@@ -1,18 +1,32 @@
 package org.popcraft.chunky.platform;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
+import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.popcraft.chunky.util.Coordinate;
+import org.popcraft.chunky.platform.util.Location;
 
-import java.util.Optional;
-import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.popcraft.chunky.util.Translator.translateKey;
 
 public class BukkitSender implements Sender {
-    final CommandSender sender;
+    private static final Pattern RGB_PATTERN = Pattern.compile("&#[0-9a-fA-F]{6}");
+    private static final boolean RGB_COLORS_SUPPORTED;
+
+    static {
+        boolean rgbSupported;
+        try {
+            ChatColor.class.getMethod("of", String.class);
+            rgbSupported = true;
+        } catch (NoSuchMethodException e) {
+            rgbSupported = false;
+        }
+        RGB_COLORS_SUPPORTED = rgbSupported;
+    }
+
+    private final CommandSender sender;
 
     public BukkitSender(CommandSender sender) {
         this.sender = sender;
@@ -29,26 +43,36 @@ public class BukkitSender implements Sender {
     }
 
     @Override
-    public Optional<UUID> getUUID() {
-        if (sender instanceof Player) {
-            return Optional.of(((Player) sender).getUniqueId());
-        } else {
-            return Optional.empty();
-        }
+    public World getWorld() {
+        return new BukkitWorld(Bukkit.getWorlds().get(0));
     }
 
     @Override
-    public Coordinate getCoordinate() {
-        if (sender instanceof Player) {
-            Location location = ((Player) sender).getLocation();
-            return new Coordinate(location.getBlockX(), location.getBlockZ());
-        } else {
-            return new Coordinate(0, 0);
-        }
+    public Location getLocation() {
+        return new Location(getWorld(), 0, 0, 0, 0, 0);
+    }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        return sender.hasPermission(permission);
     }
 
     @Override
     public void sendMessage(String key, boolean prefixed, Object... args) {
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', translateKey(key, prefixed, args)));
+        sender.sendMessage(formatColored(translateKey(key, prefixed, args)));
+    }
+
+    protected String formatColored(String message) {
+        if (RGB_COLORS_SUPPORTED) {
+            Matcher rgbMatcher = RGB_PATTERN.matcher(message);
+            while (rgbMatcher.find()) {
+                final ChatColor rgbColor = ChatColor.of(rgbMatcher.group().substring(1));
+                final String messageStart = message.substring(0, rgbMatcher.start());
+                final String messageEnd = message.substring(rgbMatcher.end());
+                message = messageStart + rgbColor + messageEnd;
+                rgbMatcher = RGB_PATTERN.matcher(message);
+            }
+        }
+        return ChatColor.translateAlternateColorCodes('&', message);
     }
 }

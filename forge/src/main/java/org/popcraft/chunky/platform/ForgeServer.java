@@ -4,7 +4,6 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
 import org.popcraft.chunky.ChunkyForge;
 import org.popcraft.chunky.integration.Integration;
 
@@ -32,11 +31,8 @@ public class ForgeServer implements Server {
 
     @Override
     public Optional<World> getWorld(String name) {
-        ResourceLocation resourceLocation = ResourceLocation.tryParse(name);
-        if (resourceLocation == null) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, resourceLocation)))
+        return Optional.ofNullable(ResourceLocation.tryParse(name))
+                .map(resourceLocation -> server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, resourceLocation)))
                 .map(ForgeWorld::new);
     }
 
@@ -48,18 +44,18 @@ public class ForgeServer implements Server {
     }
 
     @Override
-    public Sender getConsoleSender() {
+    public Sender getConsole() {
         return new ForgeSender(server.createCommandSourceStack());
     }
 
     @Override
-    public Collection<Sender> getPlayers() {
-        return server.getPlayerList().getPlayers().stream().map(ServerPlayer::createCommandSourceStack).map(ForgeSender::new).collect(Collectors.toList());
+    public Collection<Player> getPlayers() {
+        return server.getPlayerList().getPlayers().stream().map(ForgePlayer::new).collect(Collectors.toList());
     }
 
     @Override
-    public Optional<Sender> getPlayer(String name) {
-        return Optional.ofNullable(server.getPlayerList().getPlayerByName(name)).map(ServerPlayer::createCommandSourceStack).map(ForgeSender::new);
+    public Optional<Player> getPlayer(String name) {
+        return Optional.ofNullable(server.getPlayerList().getPlayerByName(name)).map(ForgePlayer::new);
     }
 
     @Override

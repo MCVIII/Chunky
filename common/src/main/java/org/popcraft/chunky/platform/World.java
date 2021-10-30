@@ -1,6 +1,7 @@
 package org.popcraft.chunky.platform;
 
-import org.popcraft.chunky.util.Coordinate;
+import org.popcraft.chunky.platform.util.Location;
+import org.popcraft.chunky.platform.util.Vector3;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -18,9 +19,15 @@ public interface World {
 
     int getSeaLevel();
 
-    Coordinate getSpawnCoordinate();
+    Location getSpawn();
 
     Border getWorldBorder();
+
+    int getElevation(int x, int z);
+
+    void playEffect(Player player, String effect);
+
+    void playSound(Player player, String sound);
 
     Optional<Path> getEntitiesDirectory();
 
